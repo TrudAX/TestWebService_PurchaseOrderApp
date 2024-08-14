@@ -1,0 +1,196 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Order Management</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+
+        .po-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            background-color: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+            .po-table th, .po-table td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: left;
+            }
+
+            .po-table th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+            }
+
+        .po-lines {
+            margin: 0;
+            width: auto;
+        }
+
+            .po-lines th, .po-lines td {
+                padding: 4px 8px;
+            }
+
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .delete-button {
+            background-color: #f44336;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        #createForm {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+
+            #createForm input[type="text"] {
+                width: calc(50% - 10px);
+                padding: 8px;
+                margin: 5px 5px 5px 0;
+                display: inline-block;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                box-sizing: border-box;
+            }
+    </style>
+</head>
+<body>
+    <h1>Purchase Order Management</h1>
+    <button onclick="loadInitialData()" class="button">Load Initial Data</button>
+    <div id="purchaseOrders"></div>
+    <h2>Create New Purchase Order</h2>
+    <form id="createForm">
+        <input type="text" id="purchId" placeholder="PurchId" required>
+        <input type="text" id="orderAccount" placeholder="OrderAccount" required>
+        <button type="submit" class="button">Create</button>
+    </form>
+
+    <script>
+        async function loadInitialData() {
+            try {
+                await axios.post('/api/purchaseorder/reset');
+                loadPurchaseOrders();
+            } catch (error) {
+                console.error('Error loading initial data:', error);
+            }
+        }
+
+        async function loadPurchaseOrders() {
+            try {
+                const response = await axios.get('/api/purchaseorder');
+                let purchaseOrders = response.data;
+
+                purchaseOrders.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+                const purchaseOrdersDiv = document.getElementById('purchaseOrders');
+                purchaseOrdersDiv.innerHTML = '';
+                purchaseOrders.forEach(po => {
+                    const poDiv = document.createElement('div');
+                    poDiv.innerHTML = `
+                            <table class="po-table">
+                                <tr>
+                                    <th>Purchase Order</th>
+                                    <th>Order Account</th>
+                                    <th>Last Updated</th>
+                                    <th>Action</th>
+                                </tr>
+                                <tr>
+                                    <td>${po.purchId}</td>
+                                    <td>${po.orderAccount}</td>
+                                    <td>${moment.utc(po.updatedAt).local().format('YYYY-MM-DD HH:mm:ss')}</td>
+                                    <td><button onclick="deletePurchaseOrder(${po.id})" class="button delete-button">Delete</button></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4">
+                                        <table class="po-lines">
+                                            <tr>
+                                                <th>Item</th>
+                                                <th>Quantity</th>
+                                                <th>Amount</th>
+                                            </tr>
+                                            ${po.lines.map(line => `
+                                                <tr>
+                                                    <td>${line.itemId}</td>
+                                                    <td>${line.quantity}</td>
+                                                    <td>${line.lineAmount}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        `;
+                    purchaseOrdersDiv.appendChild(poDiv);
+                });
+            } catch (error) {
+                console.error('Error loading purchase orders:', error);
+            }
+        }
+
+        async function createPurchaseOrder(event) {
+            event.preventDefault();
+            const purchId = document.getElementById('purchId').value;
+            const orderAccount = document.getElementById('orderAccount').value;
+            try {
+                await axios.post('/api/purchaseorder', { purchId, orderAccount, lines: [] });
+                loadPurchaseOrders();
+                document.getElementById('createForm').reset();
+            } catch (error) {
+                console.error('Error creating purchase order:', error);
+            }
+        }
+
+        async function deletePurchaseOrder(id) {
+            try {
+                await axios.delete(`/api/purchaseorder/${id}`);
+                loadPurchaseOrders();
+            } catch (error) {
+                console.error('Error deleting purchase order:', error);
+            }
+        }
+
+        document.getElementById('createForm').addEventListener('submit', createPurchaseOrder);
+
+        // Load purchase orders on page load
+        loadPurchaseOrders();
+    </script>
+</body>
+</html>
