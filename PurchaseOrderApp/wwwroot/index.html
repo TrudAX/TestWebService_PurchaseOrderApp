@@ -127,12 +127,14 @@
                     poDiv.innerHTML = `
                             <table class="po-table">
                                 <tr>
+                                    <th>ID</th>
                                     <th>Purchase Order</th>
                                     <th>Order Account</th>
                                     <th>Last Updated</th>
                                     <th>Action</th>
                                 </tr>
                                 <tr>
+                                    <td>${po.id}</td>
                                     <td>${po.purchId}</td>
                                     <td>${po.orderAccount}</td>
                                     <td>${moment.utc(po.updatedAt).local().format('YYYY-MM-DD HH:mm:ss')}</td>
