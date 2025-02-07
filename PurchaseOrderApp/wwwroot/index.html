@@ -73,6 +73,13 @@
             font-size: 12px;
         }
 
+        .edit-button {
+            background-color: #2196F3;
+            padding: 4px 8px;
+            font-size: 12px;
+            margin-right: 4px;
+        }
+
         #createForm {
             background-color: #fff;
             padding: 15px;
@@ -138,7 +145,10 @@
                                     <td>${po.purchId}</td>
                                     <td>${po.orderAccount}</td>
                                     <td>${moment.utc(po.updatedAt).local().format('YYYY-MM-DD HH:mm:ss')}</td>
-                                    <td><button onclick="deletePurchaseOrder(${po.id})" class="button delete-button">Delete</button></td>
+                                    <td>
+                                        <button onclick="editPurchaseOrder(${po.id})" class="button edit-button">Edit</button>
+                                        <button onclick="deletePurchaseOrder(${po.id})" class="button delete-button">Delete</button>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td colspan="4">
@@ -186,6 +196,15 @@
                 loadPurchaseOrders();
             } catch (error) {
                 console.error('Error deleting purchase order:', error);
+            }
+        }
+
+        async function editPurchaseOrder(id) {
+            try {
+                await axios.put(`/api/purchaseorder/${id}/incrementfirstline`);
+                loadPurchaseOrders();
+            } catch (error) {
+                console.error('Error editing purchase order:', error);
             }
         }
 

@@ -100,5 +100,20 @@ namespace PurchaseOrderApp.Controllers
 
             return Ok("Database reset and reseeded successfully.");
         }
+
+        // Add this new endpoint
+        [HttpPut("{id}/incrementfirstline")]
+        public async Task<IActionResult> IncrementFirstLineQuantity(int id)
+        {
+            try
+            {
+                await _service.IncrementFirstLineQuantity(id);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }

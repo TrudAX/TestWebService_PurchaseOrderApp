@@ -184,5 +184,23 @@ namespace PurchaseOrderApp.Services
                 _context.SaveChanges();
             }
         }
+
+        public async Task IncrementFirstLineQuantity(int id)
+        {
+            var purchaseOrder = await _context.PurchaseOrders
+                .Include(po => po.Lines)
+                .FirstOrDefaultAsync(po => po.ID == id);
+
+            if (purchaseOrder == null)
+                throw new Exception("Purchase order not found");
+
+            var firstLine = purchaseOrder.Lines.FirstOrDefault();
+            if (firstLine != null)
+            {
+                firstLine.Quantity += 1;
+                purchaseOrder.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+        }
     }
 }

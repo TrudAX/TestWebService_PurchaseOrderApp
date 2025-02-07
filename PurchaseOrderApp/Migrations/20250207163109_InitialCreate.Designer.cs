@@ -11,7 +11,7 @@ using PurchaseOrderApp.Data;
 namespace PurchaseOrderApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240814124444_InitialCreate")]
+    [Migration("20250207163109_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
