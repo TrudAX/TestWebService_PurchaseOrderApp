@@ -140,45 +140,48 @@ namespace PurchaseOrderApp.Services
             return await query.OrderByDescending(po => po.UpdatedAt).ToListAsync();
         }
 
-        public void SeedTestData()
+        public void SeedTestData(string[] customItemIds = null)
         {
             if (!_context.PurchaseOrders.Any())
             {
+                // Use either custom item IDs or default values
+                string[] itemIds = customItemIds ?? new[] { "ITEM-001", "ITEM-002", "ITEM-003", "ITEM-004" };
+
                 var testOrders = new List<PurchaseOrder>
-        {
-            new PurchaseOrder
-            {
-                PurchId = "PO-001",
-                OrderAccount = "ACCT-001",
-                UpdatedAt = DateTime.UtcNow,
-                Lines = new List<PurchaseOrderLine>
                 {
-                    new PurchaseOrderLine { PurchId = "PO-001", ItemId = "ITEM-001", Quantity = 10, LineAmount = 100 },
-                    new PurchaseOrderLine { PurchId = "PO-001", ItemId = "ITEM-002", Quantity = 5, LineAmount = 75 }
-                }
-            },
-            new PurchaseOrder
-            {
-                PurchId = "PO-002",
-                OrderAccount = "ACCT-002",
-                UpdatedAt = DateTime.UtcNow.AddHours(-4), // One day ago
-                Lines = new List<PurchaseOrderLine>
-                {
-                    new PurchaseOrderLine { PurchId = "PO-002", ItemId = "ITEM-003", Quantity = 8, LineAmount = 120 }
-                }
-            },
-            new PurchaseOrder
-            {
-                PurchId = "PO-003",
-                OrderAccount = "ACCT-003",
-                UpdatedAt = DateTime.UtcNow.AddHours(-2), // 12 hours ago
-                Lines = new List<PurchaseOrderLine>
-                {
-                    new PurchaseOrderLine { PurchId = "PO-003", ItemId = "ITEM-001", Quantity = 15, LineAmount = 150 },
-                    new PurchaseOrderLine { PurchId = "PO-003", ItemId = "ITEM-004", Quantity = 3, LineAmount = 90 }
-                }
-            }
-        };
+                    new PurchaseOrder
+                    {
+                        PurchId = "PO-001",
+                        OrderAccount = "ACCT-001",
+                        UpdatedAt = DateTime.UtcNow,
+                        Lines = new List<PurchaseOrderLine>
+                        {
+                            new PurchaseOrderLine { PurchId = "PO-001", ItemId = itemIds[0], Quantity = 10, LineAmount = 100 },
+                            new PurchaseOrderLine { PurchId = "PO-001", ItemId = itemIds[1], Quantity = 5, LineAmount = 75 }
+                        }
+                    },
+                    new PurchaseOrder
+                    {
+                        PurchId = "PO-002",
+                        OrderAccount = "ACCT-002", 
+                        UpdatedAt = DateTime.UtcNow.AddHours(-4),
+                        Lines = new List<PurchaseOrderLine>
+                        {
+                            new PurchaseOrderLine { PurchId = "PO-002", ItemId = itemIds[1], Quantity = 8, LineAmount = 120 }
+                        }
+                    },
+                    new PurchaseOrder
+                    {
+                        PurchId = "PO-003",
+                        OrderAccount = "ACCT-003",
+                        UpdatedAt = DateTime.UtcNow.AddHours(-2),
+                        Lines = new List<PurchaseOrderLine>
+                        {
+                            new PurchaseOrderLine { PurchId = "PO-003", ItemId = itemIds[0], Quantity = 15, LineAmount = 150 },
+                            new PurchaseOrderLine { PurchId = "PO-003", ItemId = itemIds[2], Quantity = 3, LineAmount = 90 }
+                        }
+                    }
+                };
 
                 _context.PurchaseOrders.AddRange(testOrders);
                 _context.SaveChanges();

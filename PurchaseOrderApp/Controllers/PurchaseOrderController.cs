@@ -5,6 +5,7 @@ using PurchaseOrderApp.Data;
 using PurchaseOrderApp.Models;
 using PurchaseOrderApp.Services;
 using PurchaseOrderApp.Exceptions;
+using System.ComponentModel.DataAnnotations;
 
 namespace PurchaseOrderApp.Controllers
 {
@@ -20,14 +21,7 @@ namespace PurchaseOrderApp.Controllers
             _service = service;
             _context = context;
         }
-        /*
-        [HttpPost]
-        public async Task<ActionResult<PurchaseOrder>> CreateOrUpdatePurchaseOrder(PurchaseOrder purchaseOrder)
-        {
-            var result = await _service.UpsertPurchaseOrderAsync(purchaseOrder);
-            return CreatedAtAction(nameof(GetPurchaseOrder), new { id = result.ID }, result);
-        }
-        */
+
         [HttpPost]
         public async Task<ActionResult<PurchaseOrder>> CreateOrUpdatePurchaseOrder(PurchaseOrder purchaseOrder)
         {
@@ -36,22 +30,16 @@ namespace PurchaseOrderApp.Controllers
                 var result = await _service.UpsertPurchaseOrderAsync(purchaseOrder);
                 return CreatedAtAction(nameof(GetPurchaseOrder), new { id = result.ID }, result);
             }
-            catch (ValidationException ex)
+            catch (System.ComponentModel.DataAnnotations.ValidationException ex)
             {
-                return BadRequest(new { Errors = ex.Errors });
+                return BadRequest(new { Error = ex.ValidationResult.ErrorMessage });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { Error = "An error occurred while processing your request.", Message = ex.Message });
             }
         }
-        /*
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<PurchaseOrder>>> GetPurchaseOrders()
-        {
-            return await _service.GetAllPurchaseOrdersAsync();
-        }
-        */
+
         [HttpGet]
         public async Task<IActionResult> GetPurchaseOrders([FromQuery] DateTime? updatedAt = null)
         {
@@ -87,21 +75,36 @@ namespace PurchaseOrderApp.Controllers
             await _service.DeletePurchaseOrderAsync(id);
             return NoContent();
         }
-        [HttpPost("reset")]
-        public async Task<IActionResult> ResetDatabase()
+
+        [HttpPost]
+        [Route("LoadInitialData")]
+        public async Task<IActionResult> ResetDatabase([FromBody] ResetRequestModel? model)
         {
-            // Clear all existing data
-            _context.PurchaseOrderLines.RemoveRange(_context.PurchaseOrderLines);
-            _context.PurchaseOrders.RemoveRange(_context.PurchaseOrders);
-            await _context.SaveChangesAsync();
+            try
+            {
+                // Clear all existing data
+                _context.PurchaseOrderLines.RemoveRange(_context.PurchaseOrderLines);
+                _context.PurchaseOrders.RemoveRange(_context.PurchaseOrders);
+                await _context.SaveChangesAsync();
 
-            // Reseed the database
-            _service.SeedTestData();
+                // If model is null or has no ItemIds, use default values
+                if (model == null || !model.ItemIds.Any())
+                {
+                    _service.SeedTestData();
+                }
+                else
+                {
+                    _service.SeedTestData(model.ItemIds.ToArray());
+                }
 
-            return Ok("Database reset and reseeded successfully.");
+                return Ok(new { message = "Database reset and reseeded successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Error resetting database: {ex.Message}" });
+            }
         }
 
-        // Add this new endpoint
         [HttpPut("{id}/incrementfirstline")]
         public async Task<IActionResult> IncrementFirstLineQuantity(int id)
         {
@@ -115,5 +118,16 @@ namespace PurchaseOrderApp.Controllers
                 return BadRequest(ex.Message);
             }
         }
+    }
+
+    public class ResetRequestModel
+    {
+        public ResetRequestModel()
+        {
+            ItemIds = new List<string>();
+        }
+        
+        [Required]
+        public List<string> ItemIds { get; set; }
     }
 }
