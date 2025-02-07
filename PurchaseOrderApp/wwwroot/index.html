@@ -107,8 +107,10 @@
     <form id="createForm">
         <input type="text" id="purchId" placeholder="PurchId" required>
         <input type="text" id="orderAccount" placeholder="OrderAccount" required>
+        <input type="text" id="lines" placeholder="ItemIds (separated by ;)" required style="width: 100%">
         <button type="submit" class="button">Create</button>
     </form>
+    <div id="errorMessage" style="color: red; margin-top: 10px;"></div>
 
     <script>
         async function loadInitialData() {
@@ -179,16 +181,61 @@
 
         async function createPurchaseOrder(event) {
             event.preventDefault();
+            
             const purchId = document.getElementById('purchId').value;
             const orderAccount = document.getElementById('orderAccount').value;
+            const lineInput = document.getElementById('lines').value;
+            
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = '';
+            
+            if (!lineInput) {
+                errorDiv.textContent = 'Please enter at least one ItemId';
+                return;
+            }
+            
+            // Parse the semicolon-separated ItemIds and create lines array with PurchId
+            const lines = lineInput.split(';')
+                .map(itemId => itemId.trim())
+                .filter(itemId => itemId.length > 0)
+                .map(itemId => ({
+                    purchId: purchId,  // Add PurchId to each line
+                    itemId: itemId,
+                    quantity: 1,
+                    lineAmount: Math.round((10 + Math.random() * 10) * 100) / 100
+                }));
+
+            // Create the purchase order object matching the server model
+            const purchaseOrder = {
+                purchId: purchId,
+                orderAccount: orderAccount,
+                updatedAt: new Date().toISOString(),
+                lines: lines
+            };
+            
+            console.log('Submitting data:', purchaseOrder);
+
             try {
-                await axios.post('/api/purchaseorder', { purchId, orderAccount, lines: [] });
+                const response = await axios.post('/api/purchaseorder', purchaseOrder);
+                console.log('Server response:', response.data);
                 loadPurchaseOrders();
                 document.getElementById('createForm').reset();
             } catch (error) {
                 console.error('Error creating purchase order:', error);
+                errorDiv.textContent = `Error: ${error.response?.data?.message || error.message || 'Failed to create purchase order'}`;
             }
         }
+
+
+        // Remove the old event listener (if any) and add the new one
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('createForm');
+            form.removeEventListener('submit', createPurchaseOrder);
+            form.addEventListener('submit', createPurchaseOrder);
+            
+            // Load purchase orders on page load
+            loadPurchaseOrders();
+        });
 
         async function deletePurchaseOrder(id) {
             try {
@@ -207,11 +254,6 @@
                 console.error('Error editing purchase order:', error);
             }
         }
-
-        document.getElementById('createForm').addEventListener('submit', createPurchaseOrder);
-
-        // Load purchase orders on page load
-        loadPurchaseOrders();
     </script>
 </body>
 </html>
